@@ -1,0 +1,49 @@
+# DHCP Server Configuration (Kea DHCP)
+
+# Install package
+dnf install kea -y
+
+# Edit config file
+vim /etc/kea/kea-dhcp4.conf
+
+{
+ "Dhcp4": {
+  "interfaces-config": {
+   "interfaces": ["ens160"]
+  },
+  "subnet4": [
+   {
+    "id": 1,
+    "subnet": "192.168.0.0/24",
+    "pools": [
+     { "pool": "192.168.0.100 - 192.168.0.200" }
+    ],
+    "option-data": [
+     { "name": "domain-name-servers", "data": "192.168.0.254" },
+     { "name": "routers", "data": "192.168.0.1" }
+    ]
+   }
+  ]
+ }
+}
+
+# Start service
+systemctl restart kea-dhcp4.service
+systemctl enable kea-dhcp4.service
+
+# Firewall allow
+firewall-cmd --permanent --add-service=dhcp
+firewall-cmd --reload
+
+
+# -------- CLIENT SIDE --------
+
+# Set auto IP
+nmcli con modify ens160 ipv4.method auto
+
+# Restart connection
+nmcli con down ens160
+nmcli con up ens160
+
+# Verify IP
+nmcli dev show ens160
